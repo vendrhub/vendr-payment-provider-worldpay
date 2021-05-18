@@ -8,11 +8,10 @@ using Vendr.Core.Web.PaymentProviders;
 
 namespace Vendr.PaymentProviders.Worldpay
 {
-    [PaymentProvider("worldpay", "Worldpay", "Worldpay payment provider", Icon = "icon-invoice")]
+    [PaymentProvider("worldpay", "Worldpay", "Worldpay payment provider", Icon = "icon-credit-card")]
     public class WorldpayPaymentProvider : PaymentProviderBase<WorldpaySettings>
     {
-        public WorldpayPaymentProvider(VendrContext vendr)
-            : base(vendr)
+        public WorldpayPaymentProvider(VendrContext vendr) : base(vendr)
         { }
 
         public override bool FinalizeAtContinueUrl => true;
