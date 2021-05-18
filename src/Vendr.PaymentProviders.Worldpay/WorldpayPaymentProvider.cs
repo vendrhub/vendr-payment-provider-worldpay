@@ -6,7 +6,7 @@ using Vendr.Core.Models;
 using Vendr.Core.Web.Api;
 using Vendr.Core.Web.PaymentProviders;
 
-namespace Vendr.PaymentProviders
+namespace Vendr.PaymentProviders.Worldpay
 {
     [PaymentProvider("worldpay", "Worldpay", "Worldpay payment provider", Icon = "icon-invoice")]
     public class WorldpayPaymentProvider : PaymentProviderBase<WorldpaySettings>
