@@ -40,20 +40,19 @@ namespace Vendr.PaymentProviders.Worldpay
         [PaymentProviderSetting(Name = "Verbose Logging", Description = "Enable verbose logging")]
         public bool VerboseLogging { get; set; }
 
-        [PaymentProviderSetting(Name = "Order property alias: Billing Last Name", Description = "Order property alias containing the billing last name", SortOrder = 100)]
+        [PaymentProviderSetting(Name = "Order property alias: Billing Last Name", Description = "Order property alias containing the billing last name")]
         public string OrderPropertyBillingLastName { get; set; }
 
-        [PaymentProviderSetting(Name = "Order property alias: Billing First Name", Description = "Order property alias containing the billing first name", SortOrder = 101)]
+        [PaymentProviderSetting(Name = "Order property alias: Billing First Name", Description = "Order property alias containing the billing first name")]
         public string OrderPropertyBillingFirstName { get; set; }
 
-        [PaymentProviderSetting(Name = "Order property alias: Billing Address 1", Description = "Order property alias containing the billing address 1", SortOrder = 102)]
+        [PaymentProviderSetting(Name = "Order property alias: Billing Address 1", Description = "Order property alias containing the billing address 1")]
         public string OrderPropertyBillingAddress1 { get; set; }
         
-        [PaymentProviderSetting(Name = "Order property alias: Billing City", Description = "Order property alias containing the billing city", SortOrder = 104)]
+        [PaymentProviderSetting(Name = "Order property alias: Billing City", Description = "Order property alias containing the billing city")]
         public string OrderPropertyBillingCity { get; set; }
 
-        [PaymentProviderSetting(Name = "Order property alias: Billing Postcode", Description = "Order property alias containing the billing postcode", SortOrder = 106)]
+        [PaymentProviderSetting(Name = "Order property alias: Billing Postcode", Description = "Order property alias containing the billing postcode")]
         public string OrderPropertyBillingPostcode { get; set; }
-
     }
 }
