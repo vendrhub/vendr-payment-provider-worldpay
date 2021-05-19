@@ -24,7 +24,7 @@ namespace Vendr.PaymentProviders.Worldpay
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public override bool FinalizeAtContinueUrl => true;
+        public override bool FinalizeAtContinueUrl => false;
 
         public override PaymentFormResult GenerateForm(OrderReadOnly order, string continueUrl, string cancelUrl, string callbackUrl, WorldpaySettings settings)
         {
