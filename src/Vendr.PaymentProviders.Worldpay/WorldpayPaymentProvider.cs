@@ -38,7 +38,6 @@ namespace Vendr.PaymentProviders.Worldpay
                 var url = settings.Mode.ToLower() == "live" ? settings.LiveUrl : settings.TestUrl;
                 var form = new PaymentForm(url, FormMethod.Post);
 
-                //cartId
                 settings.InstallId.MustNotBeNull("settings.InstallId");
                 settings.TestModeNumber.MustNotBeNull("settings.TestModeNumber");
                 settings.AuthMode.MustNotBeNull("settings.AuthMode");
