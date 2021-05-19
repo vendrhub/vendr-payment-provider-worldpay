@@ -123,7 +123,7 @@ namespace Vendr.PaymentProviders.Worldpay
         public override string GetCancelUrl(OrderReadOnly order, WorldpaySettings settings)
         {
             settings.MustNotBeNull("settings");
-            settings.TestUrl.MustNotBeNull("settings.CancelUrl");
+            settings.CancelUrl.MustNotBeNull("settings.CancelUrl");
 
             return settings.CancelUrl;
         }
@@ -131,7 +131,7 @@ namespace Vendr.PaymentProviders.Worldpay
         public override string GetErrorUrl(OrderReadOnly order, WorldpaySettings settings)
         {
             settings.MustNotBeNull("settings");
-            settings.TestUrl.MustNotBeNull("settings.ErrorUrl");
+            settings.ErrorUrl.MustNotBeNull("settings.ErrorUrl");
 
             return settings.ErrorUrl;
         }
@@ -139,7 +139,7 @@ namespace Vendr.PaymentProviders.Worldpay
         public override string GetContinueUrl(OrderReadOnly order, WorldpaySettings settings)
         {
             settings.MustNotBeNull("settings");
-            settings.TestUrl.MustNotBeNull("settings.ContinueUrl");
+            settings.ContinueUrl.MustNotBeNull("settings.ContinueUrl");
 
             return settings.ContinueUrl;
         }
