@@ -32,7 +32,7 @@ namespace Vendr.PaymentProviders.Worldpay
             {
                 if (settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayPaymentProvider>($"GenerateForm method called for cart {order.CartNumber}");
+                    _logger.Info<WorldpayPaymentProvider>($"GenerateForm method called for cart {order.OrderNumber}");
                 }
 
                 var url = settings.Mode.ToLower() == "live" ? settings.LiveUrl : settings.TestUrl;
@@ -73,7 +73,7 @@ namespace Vendr.PaymentProviders.Worldpay
                     { "instId", settings.InstallId },
                     { "testMode", settings.TestModeNumber },
                     { "authMode", settings.AuthMode },
-                    { "cartId", order.CartNumber },
+                    { "cartId", order.OrderNumber },
                     { "amount", amount },
                     { "currency", currencyCode },
                     { "MC_cancelurl", cancelUrl },
@@ -89,13 +89,13 @@ namespace Vendr.PaymentProviders.Worldpay
 
                 if (!string.IsNullOrEmpty(settings.Md5Secret))
                 {
-                    var orderSignature = Md5Helper.CreateMd5(settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.CartNumber);
+                    var orderSignature = Md5Helper.CreateMd5(settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.OrderNumber);
 
                     orderDetails.Add("signature", orderSignature);
 
                     if (settings.VerboseLogging)
                     {
-                        _logger.Info<WorldpayPaymentProvider>($"Before Md5: " + settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.CartNumber);
+                        _logger.Info<WorldpayPaymentProvider>($"Before Md5: " + settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.OrderNumber);
                         _logger.Info<WorldpayPaymentProvider>($"Signature: " + orderSignature);
                     }
                 }
@@ -115,7 +115,7 @@ namespace Vendr.PaymentProviders.Worldpay
             }
             catch (Exception e)
             {
-                _logger.Error<WorldpayPaymentProvider>($"Exception thrown for cart {order.CartNumber} - with error {e.Message}");
+                _logger.Error<WorldpayPaymentProvider>($"Exception thrown for cart {order.OrderNumber} - with error {e.Message}");
                 throw;
             }
         }
@@ -148,7 +148,7 @@ namespace Vendr.PaymentProviders.Worldpay
         {
             if (request.QueryString["msgType"] == "authResult")
             {
-                _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.CartNumber}");
+                _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber}");
 
                 if (settings.VerboseLogging)
                 {
@@ -170,7 +170,7 @@ namespace Vendr.PaymentProviders.Worldpay
                             PaymentStatus = PaymentStatus.Error
                         };
 
-                        _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.CartNumber} response password incorrect");
+                        _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber} response password incorrect");
                         return response;
                     }
                 }
@@ -182,7 +182,7 @@ namespace Vendr.PaymentProviders.Worldpay
                     var transaction = request.Form["transId"];
                     var paymentState = request.Form["authMode"] == "A" ? PaymentStatus.Authorized : PaymentStatus.Captured;
 
-                    _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.CartNumber} payment authorised");
+                    _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber} payment authorised");
 
                     response.TransactionInfo = new TransactionInfo
                     {
@@ -194,7 +194,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 }
                 else
                 {
-                    _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.CartNumber} payment not authorised or error");
+                    _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber} payment not authorised or error");
 
                     response.TransactionInfo = new TransactionInfo
                     {
