@@ -17,12 +17,6 @@ namespace Vendr.PaymentProviders.Worldpay
         [PaymentProviderSetting(Name = "Install ID", Description = "The installation ID")]
         public string InstallId { get; set; }
 
-        [PaymentProviderSetting(Name = "Mode", Description = "TEST or LIVE")]
-        public string Mode { get; set; }
-
-        [PaymentProviderSetting(Name = "Test Mode Number", Description = "100 for TEST, 0 for LIVE")]
-        public string TestModeNumber { get; set; }
-
         [PaymentProviderSetting(Name = "Test URL", Description = "Default: https://secure-test.worldpay.com/wcc/purchase")]
         public string TestUrl { get; set; }
 
@@ -52,6 +46,9 @@ namespace Vendr.PaymentProviders.Worldpay
 
         [PaymentProviderSetting(Name = "Order property alias: Billing Postcode", Description = "Order property alias containing the billing postcode")]
         public string OrderPropertyBillingPostcode { get; set; }
+
+        [PaymentProviderSetting(Name = "LiveMode", Description = "Enable LIVE mode")]
+        public bool LiveMode { get; set; }
 
         [PaymentProviderSetting(Name = "Verbose Logging", Description = "Enable verbose logging", IsAdvanced = true)]
         public bool VerboseLogging { get; set; }

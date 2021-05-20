@@ -35,11 +35,11 @@ namespace Vendr.PaymentProviders.Worldpay
                     _logger.Info<WorldpayPaymentProvider>($"GenerateForm method called for cart {order.OrderNumber}");
                 }
 
-                var url = settings.Mode.ToLower() == "live" ? settings.LiveUrl : settings.TestUrl;
+                var url = settings.LiveMode ? settings.LiveUrl : settings.TestUrl;
                 var form = new PaymentForm(url, FormMethod.Post);
+                var testmode = settings.LiveMode ? "0" : "100";
 
                 settings.InstallId.MustNotBeNull("settings.InstallId");
-                settings.TestModeNumber.MustNotBeNull("settings.TestModeNumber");
 
                 var firstname = order.CustomerInfo.FirstName;
                 var surname = order.CustomerInfo.LastName;
@@ -79,7 +79,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 var orderDetails = new Dictionary<string, string>
                 {
                     { "instId", settings.InstallId },
-                    { "testMode", settings.TestModeNumber },
+                    { "testMode", testmode },
                     { "authMode", settings.AuthMode.ToString() },
                     { "cartId", order.OrderNumber },
                     { "amount", amount },
