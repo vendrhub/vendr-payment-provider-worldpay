@@ -41,11 +41,20 @@ namespace Vendr.PaymentProviders.Worldpay
                 settings.InstallId.MustNotBeNull("settings.InstallId");
                 settings.TestModeNumber.MustNotBeNull("settings.TestModeNumber");
                 settings.AuthMode.MustNotBeNull("settings.AuthMode");
-                settings.OrderPropertyBillingFirstName.MustNotBeNull("settings.OrderPropertyBillingFirstName");
-                settings.OrderPropertyBillingLastName.MustNotBeNull("settings.OrderPropertyBillingLastName");
 
-                var firstname = order.Properties[settings.OrderPropertyBillingFirstName];
-                var surname = order.Properties[settings.OrderPropertyBillingLastName];
+                var firstname = order.CustomerInfo.FirstName;
+                var surname = order.CustomerInfo.LastName;
+
+                if (!string.IsNullOrEmpty(settings.OrderPropertyBillingFirstName))
+                {
+                    firstname = order.Properties[settings.OrderPropertyBillingFirstName];
+                }
+
+                if (!string.IsNullOrEmpty(settings.OrderPropertyBillingLastName))
+                {
+                    surname = order.Properties[settings.OrderPropertyBillingLastName];
+                }
+
                 var address1 = order.Properties[settings.OrderPropertyBillingAddress1] ?? string.Empty;
                 var city = order.Properties[settings.OrderPropertyBillingCity] ?? string.Empty;
                 var postcode = order.Properties[settings.OrderPropertyBillingPostcode] ?? string.Empty;
