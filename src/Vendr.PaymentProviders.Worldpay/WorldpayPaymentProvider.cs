@@ -51,7 +51,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 var postcode = order.Properties[settings.OrderPropertyBillingPostcode] ?? string.Empty;
                 var billingCountry = Vendr.Services.CountryService.GetCountry(order.PaymentInfo.CountryId.Value);
                 var billingCountryCode = billingCountry.Code.ToUpperInvariant();
-                var amount = order.TotalPrice.Value.WithTax.ToString("0.00", CultureInfo.InvariantCulture);
+                var amount = order.TransactionAmount.Value.Value.ToString("0.00", CultureInfo.InvariantCulture);
                 var currency = Vendr.Services.CurrencyService.GetCurrency(order.CurrencyId);
                 var currencyCode = currency.Code.ToUpperInvariant();
 
