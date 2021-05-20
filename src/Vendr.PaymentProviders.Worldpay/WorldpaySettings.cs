@@ -37,9 +37,6 @@ namespace Vendr.PaymentProviders.Worldpay
         [PaymentProviderSetting(Name = "Response Password", Description = "If enabled enter response password")]
         public string ResponsePassword { get; set; }
 
-        [PaymentProviderSetting(Name = "Verbose Logging", Description = "Enable verbose logging")]
-        public bool VerboseLogging { get; set; }
-
         [PaymentProviderSetting(Name = "Order property alias: Billing Last Name", Description = "Order property alias containing the billing last name")]
         public string OrderPropertyBillingLastName { get; set; }
 
@@ -54,5 +51,8 @@ namespace Vendr.PaymentProviders.Worldpay
 
         [PaymentProviderSetting(Name = "Order property alias: Billing Postcode", Description = "Order property alias containing the billing postcode")]
         public string OrderPropertyBillingPostcode { get; set; }
+
+        [PaymentProviderSetting(Name = "Verbose Logging", Description = "Enable verbose logging", IsAdvanced = true)]
+        public bool VerboseLogging { get; set; }
     }
 }
