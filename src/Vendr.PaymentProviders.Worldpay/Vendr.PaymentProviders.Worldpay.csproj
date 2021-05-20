@@ -86,6 +86,7 @@
   <ItemGroup>
     <Compile Include="Helpers\Md5Helper.cs" />
     <Compile Include="Helpers\VerboseLoggingHelper.cs" />
+    <Compile Include="WorldpayAuthMode.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
     <Compile Include="WorldpayPaymentProvider.cs" />
     <Compile Include="WorldpaySettings.cs" />

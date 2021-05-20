@@ -40,7 +40,6 @@ namespace Vendr.PaymentProviders.Worldpay
 
                 settings.InstallId.MustNotBeNull("settings.InstallId");
                 settings.TestModeNumber.MustNotBeNull("settings.TestModeNumber");
-                settings.AuthMode.MustNotBeNull("settings.AuthMode");
 
                 var firstname = order.CustomerInfo.FirstName;
                 var surname = order.CustomerInfo.LastName;
@@ -81,7 +80,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 {
                     { "instId", settings.InstallId },
                     { "testMode", settings.TestModeNumber },
-                    { "authMode", settings.AuthMode },
+                    { "authMode", settings.AuthMode.ToString() },
                     { "cartId", order.OrderNumber },
                     { "amount", amount },
                     { "currency", currencyCode },

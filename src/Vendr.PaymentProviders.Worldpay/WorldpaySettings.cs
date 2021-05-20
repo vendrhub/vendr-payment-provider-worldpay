@@ -1,4 +1,5 @@
 using Vendr.Core.Web.PaymentProviders;
+using Vendr.PaymentProviders.Worldpay.Helpers;
 
 namespace Vendr.PaymentProviders.Worldpay
 {
@@ -27,9 +28,9 @@ namespace Vendr.PaymentProviders.Worldpay
 
         [PaymentProviderSetting(Name = "Live URL", Description = "Default: https://secure.worldpay.com/wcc/purchase")]
         public string LiveUrl { get; set; }
-        
+
         [PaymentProviderSetting(Name = "Auth Mode", Description = "A for a full authorisation, or E for a pre-authorisation")]
-        public string AuthMode { get; set; }
+        public WorldpayAuthMode AuthMode { get; set; }
 
         [PaymentProviderSetting(Name = "MD5 Secret", Description = "If enabled enter secret, fields are amount, currency, instId and cartId parameters")]
         public string Md5Secret { get; set; }
