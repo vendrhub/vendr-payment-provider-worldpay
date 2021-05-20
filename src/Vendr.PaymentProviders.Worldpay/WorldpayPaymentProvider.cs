@@ -44,19 +44,19 @@ namespace Vendr.PaymentProviders.Worldpay
                 var firstname = order.CustomerInfo.FirstName;
                 var surname = order.CustomerInfo.LastName;
 
-                if (!string.IsNullOrEmpty(settings.OrderPropertyBillingFirstName))
+                if (!string.IsNullOrEmpty(settings.BillingFirstNamePropertyAlias))
                 {
-                    firstname = order.Properties[settings.OrderPropertyBillingFirstName];
+                    firstname = order.Properties[settings.BillingFirstNamePropertyAlias];
                 }
 
-                if (!string.IsNullOrEmpty(settings.OrderPropertyBillingLastName))
+                if (!string.IsNullOrEmpty(settings.BillingLastNamePropertyAlias))
                 {
-                    surname = order.Properties[settings.OrderPropertyBillingLastName];
+                    surname = order.Properties[settings.BillingLastNamePropertyAlias];
                 }
 
-                var address1 = order.Properties[settings.OrderPropertyBillingAddress1] ?? string.Empty;
-                var city = order.Properties[settings.OrderPropertyBillingCity] ?? string.Empty;
-                var postcode = order.Properties[settings.OrderPropertyBillingPostcode] ?? string.Empty;
+                var address1 = order.Properties[settings.BillingAddressLine1PropertyAlias] ?? string.Empty;
+                var city = order.Properties[settings.BillingAddressCityPropertyAlias] ?? string.Empty;
+                var postcode = order.Properties[settings.BillingAddressZipCodePropertyAlias] ?? string.Empty;
                 var billingCountry = Vendr.Services.CountryService.GetCountry(order.PaymentInfo.CountryId.Value);
                 var billingCountryCode = billingCountry.Code.ToUpperInvariant();
                 var amount = order.TransactionAmount.Value.Value.ToString("0.00", CultureInfo.InvariantCulture);
