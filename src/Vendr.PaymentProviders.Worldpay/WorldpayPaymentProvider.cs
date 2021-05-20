@@ -35,12 +35,13 @@ namespace Vendr.PaymentProviders.Worldpay
                     _logger.Info<WorldpayPaymentProvider>($"GenerateForm method called for cart {order.OrderNumber}");
                 }
 
+                settings.InstallId.MustNotBeNull("settings.InstallId");
+                settings.TestUrl.MustNotBeNull("settings.TestUrl");
+                settings.LiveUrl.MustNotBeNull("settings.LiveUrl");
+
                 var url = settings.LiveMode ? settings.LiveUrl : settings.TestUrl;
                 var form = new PaymentForm(url, FormMethod.Post);
                 var testmode = settings.LiveMode ? "0" : "100";
-
-                settings.InstallId.MustNotBeNull("settings.InstallId");
-
                 var firstname = order.CustomerInfo.FirstName;
                 var surname = order.CustomerInfo.LastName;
 
