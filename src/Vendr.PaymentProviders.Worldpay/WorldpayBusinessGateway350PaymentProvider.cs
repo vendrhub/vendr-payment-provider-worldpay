@@ -7,41 +7,38 @@ using System.Web.Mvc;
 using Vendr.Core;
 using Vendr.Core.Logging;
 using Vendr.Core.Models;
-using Vendr.Core.Services;
 using Vendr.Core.Web.Api;
 using Vendr.Core.Web.PaymentProviders;
 using Vendr.PaymentProviders.Worldpay.Helpers;
 
 namespace Vendr.PaymentProviders.Worldpay
 {
-    [PaymentProvider("worldpay", "Worldpay", "Worldpay payment provider", Icon = "icon-credit-card")]
-    public class WorldpayPaymentProvider : PaymentProviderBase<WorldpaySettings>
+    [PaymentProvider("worldpay-bs350", "Worldpay Business Gateway 350", "Worldpay Business Gateway 350 payment provider", Icon = "icon-credit-card")]
+    public class WorldpayBusinessGateway350PaymentProvider : PaymentProviderBase<WorldpayBusinessGateway350Settings>
     {
+        private const string LiveBaseUrl = "https://secure.worldpay.com/wcc/purchase";
+        private const string TestBaseUrl = "https://secure-test.worldpay.com/wcc/purchase";
+
         private readonly ILogger _logger;
 
-        public WorldpayPaymentProvider(VendrContext vendr, ILogger logger) : base(vendr)
+        public WorldpayBusinessGateway350PaymentProvider(VendrContext vendr, ILogger logger) : base(vendr)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public override bool FinalizeAtContinueUrl => false;
 
-        public override PaymentFormResult GenerateForm(OrderReadOnly order, string continueUrl, string cancelUrl, string callbackUrl, WorldpaySettings settings)
+        public override PaymentFormResult GenerateForm(OrderReadOnly order, string continueUrl, string cancelUrl, string callbackUrl, WorldpayBusinessGateway350Settings settings)
         {
             try
             {
                 if (settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayPaymentProvider>($"GenerateForm method called for cart {order.OrderNumber}");
+                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"GenerateForm method called for cart {order.OrderNumber}");
                 }
 
                 settings.InstallId.MustNotBeNull("settings.InstallId");
-                settings.TestUrl.MustNotBeNull("settings.TestUrl");
-                settings.LiveUrl.MustNotBeNull("settings.LiveUrl");
 
-                var url = settings.LiveMode ? settings.LiveUrl : settings.TestUrl;
-                var form = new PaymentForm(url, FormMethod.Post);
-                var testmode = settings.LiveMode ? "0" : "100";
                 var firstname = order.CustomerInfo.FirstName;
                 var surname = order.CustomerInfo.LastName;
 
@@ -80,8 +77,8 @@ namespace Vendr.PaymentProviders.Worldpay
                 var orderDetails = new Dictionary<string, string>
                 {
                     { "instId", settings.InstallId },
-                    { "testMode", testmode },
-                    { "authMode", settings.AuthMode.ToString() },
+                    { "testMode", settings.TestMode ? "100" : "0" },
+                    { "authMode", settings.Capture ? "A" : "E" },
                     { "cartId", order.OrderNumber },
                     { "amount", amount },
                     { "currency", currencyCode },
@@ -104,17 +101,21 @@ namespace Vendr.PaymentProviders.Worldpay
 
                     if (settings.VerboseLogging)
                     {
-                        _logger.Info<WorldpayPaymentProvider>($"Before Md5: " + settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.OrderNumber);
-                        _logger.Info<WorldpayPaymentProvider>($"Signature: " + orderSignature);
+                        _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Before Md5: " + settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.OrderNumber);
+                        _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Signature: " + orderSignature);
                     }
                 }
 
-                form.Inputs = orderDetails;
+                var url = settings.TestMode ? TestBaseUrl : LiveBaseUrl;
+                var form = new PaymentForm(url, FormMethod.Post)
+                {
+                    Inputs = orderDetails
+                };
 
                 if (settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayPaymentProvider>($"Payment url {url}");
-                    _logger.Info<WorldpayPaymentProvider>($"Form data {orderDetails.ToFriendlyString()}");
+                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment url {url}");
+                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Form data {orderDetails.ToFriendlyString()}");
                 }
 
                 return new PaymentFormResult()
@@ -124,12 +125,12 @@ namespace Vendr.PaymentProviders.Worldpay
             }
             catch (Exception e)
             {
-                _logger.Error<WorldpayPaymentProvider>($"Exception thrown for cart {order.OrderNumber} - with error {e.Message}");
+                _logger.Error<WorldpayBusinessGateway350PaymentProvider>($"Exception thrown for cart {order.OrderNumber} - with error {e.Message}");
                 throw;
             }
         }
 
-        public override string GetCancelUrl(OrderReadOnly order, WorldpaySettings settings)
+        public override string GetCancelUrl(OrderReadOnly order, WorldpayBusinessGateway350Settings settings)
         {
             settings.MustNotBeNull("settings");
             settings.CancelUrl.MustNotBeNull("settings.CancelUrl");
@@ -137,7 +138,7 @@ namespace Vendr.PaymentProviders.Worldpay
             return settings.CancelUrl;
         }
 
-        public override string GetErrorUrl(OrderReadOnly order, WorldpaySettings settings)
+        public override string GetErrorUrl(OrderReadOnly order, WorldpayBusinessGateway350Settings settings)
         {
             settings.MustNotBeNull("settings");
             settings.ErrorUrl.MustNotBeNull("settings.ErrorUrl");
@@ -145,7 +146,7 @@ namespace Vendr.PaymentProviders.Worldpay
             return settings.ErrorUrl;
         }
 
-        public override string GetContinueUrl(OrderReadOnly order, WorldpaySettings settings)
+        public override string GetContinueUrl(OrderReadOnly order, WorldpayBusinessGateway350Settings settings)
         {
             settings.MustNotBeNull("settings");
             settings.ContinueUrl.MustNotBeNull("settings.ContinueUrl");
@@ -153,34 +154,25 @@ namespace Vendr.PaymentProviders.Worldpay
             return settings.ContinueUrl;
         }
 
-        public override CallbackResult ProcessCallback(OrderReadOnly order, HttpRequestBase request, WorldpaySettings settings)
+        public override CallbackResult ProcessCallback(OrderReadOnly order, HttpRequestBase request, WorldpayBusinessGateway350Settings settings)
         {
             if (request.QueryString["msgType"] == "authResult")
             {
-                _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber}");
+                _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber}");
 
                 if (settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayPaymentProvider>($"Worldpay data {request.Form.ToFriendlyString()}");
+                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Worldpay data {request.Form.ToFriendlyString()}");
                 }
-
-                var response = new CallbackResult();
 
                 if (!string.IsNullOrEmpty(settings.ResponsePassword))
                 {
                     // validate password
                     if (settings.ResponsePassword != request.Form["callbackPW"])
                     {
-                        response.TransactionInfo = new TransactionInfo
-                        {
-                            AmountAuthorized = 0,
-                            TransactionFee = 0m,
-                            TransactionId = Guid.NewGuid().ToString("N"),
-                            PaymentStatus = PaymentStatus.Error
-                        };
+                        _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber} response password incorrect");
 
-                        _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber} response password incorrect");
-                        return response;
+                        return CallbackResult.Ok();
                     }
                 }
 
@@ -188,33 +180,23 @@ namespace Vendr.PaymentProviders.Worldpay
                 if (request.Form["transStatus"] == "Y")
                 {
                     var totalAmount = decimal.Parse(request.Form["authAmount"], CultureInfo.InvariantCulture);
-                    var transaction = request.Form["transId"];
-                    var paymentState = request.Form["authMode"] == "A" ? PaymentStatus.Authorized : PaymentStatus.Captured;
+                    var transactionId = request.Form["transId"];
+                    var paymentStatus = request.Form["authMode"] == "A" ? PaymentStatus.Authorized : PaymentStatus.Captured;
 
-                    _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber} payment authorised");
+                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber} payment authorised");
 
-                    response.TransactionInfo = new TransactionInfo
+                    return CallbackResult.Ok(new TransactionInfo
                     {
                         AmountAuthorized = totalAmount,
                         TransactionFee = 0m,
-                        TransactionId = transaction,
-                        PaymentStatus = paymentState
-                    };
+                        TransactionId = transactionId,
+                        PaymentStatus = paymentStatus
+                    });
                 }
                 else
                 {
-                    _logger.Info<WorldpayPaymentProvider>($"Payment call back for cart {order.OrderNumber} payment not authorised or error");
-
-                    response.TransactionInfo = new TransactionInfo
-                    {
-                        AmountAuthorized = 0,
-                        TransactionFee = 0m,
-                        TransactionId = Guid.NewGuid().ToString("N"),
-                        PaymentStatus = PaymentStatus.Error
-                    };
+                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber} payment not authorised or error");
                 }
-
-                return response;
             }
 
             return CallbackResult.Ok();
