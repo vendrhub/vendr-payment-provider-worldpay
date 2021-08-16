@@ -7,6 +7,7 @@ using System.Web.Mvc;
 using Vendr.Core;
 using Vendr.Core.Logging;
 using Vendr.Core.Models;
+using Vendr.Core.Web;
 using Vendr.Core.Web.Api;
 using Vendr.Core.Web.PaymentProviders;
 using Vendr.PaymentProviders.Worldpay.Helpers;
@@ -82,15 +83,16 @@ namespace Vendr.PaymentProviders.Worldpay
                     { "cartId", order.OrderNumber },
                     { "amount", amount },
                     { "currency", currencyCode },
-                    { "MC_cancelurl", cancelUrl },
-                    { "MC_returnurl", continueUrl },
-                    { "MC_callbackurl", callbackUrl },
                     { "name", firstname + " " + surname },
                     { "email", order.CustomerInfo.Email },
                     { "address1", address1 },
                     { "town", city },
                     { "postcode", postcode },
-                    { "country", billingCountryCode }
+                    { "country", billingCountryCode },
+                    { "MC_orderRef", order.GenerateOrderReference() },
+                    { "MC_cancelurl", cancelUrl },
+                    { "MC_returnurl", continueUrl },
+                    { "MC_callbackurl", callbackUrl }
                 };
 
                 if (!string.IsNullOrEmpty(settings.Md5Secret))
@@ -152,6 +154,31 @@ namespace Vendr.PaymentProviders.Worldpay
             settings.ContinueUrl.MustNotBeNull("settings.ContinueUrl");
 
             return settings.ContinueUrl;
+        }
+
+        public override OrderReference GetOrderReference(HttpRequestBase request, WorldpayBusinessGateway350Settings settings)
+        {
+            request.MustNotBeNull("request");
+            settings.MustNotBeNull("settings");
+
+            if (settings.VerboseLogging)
+            {
+                _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Worldpay data {request.Form.ToFriendlyString()}");
+            }
+
+            if (!string.IsNullOrEmpty(settings.ResponsePassword))
+            {
+                // Validate password
+                if (settings.ResponsePassword != request.Form["callbackPW"])
+                {
+                    return null;
+                }
+            }
+
+            if (OrderReference.TryParse(request.Form["MC_orderRef"], out var orderReference))
+                return orderReference;
+
+            return base.GetOrderReference(request, settings);
         }
 
         public override CallbackResult ProcessCallback(OrderReadOnly order, HttpRequestBase request, WorldpayBusinessGateway350Settings settings)
