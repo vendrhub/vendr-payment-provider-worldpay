@@ -13,7 +13,7 @@
         <description>Worldpay payment provider for Vendr, the eCommerce package for Umbrao v8+</description>
         <summary>Worldpay payment provider for Vendr, the eCommerce package for Umbrao v8+</summary>
         <language>en-US</language>
-        <tags>umbraco ecommerce vendr</tags>
+        <tags>umbraco ecommerce vendr worldpay</tags>
         <dependencies>
             <group targetFramework="net472">
                 <dependency id="Vendr.Core.Web" version="[1.4.0,1.999999)" />
