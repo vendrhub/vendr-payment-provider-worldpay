@@ -1,8 +1,10 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vendr.PaymentProviders.Worldpay", "src\Vendr.PaymentProviders.Worldpay\Vendr.PaymentProviders.Worldpay.csproj", "{EEC07F78-E583-46B0-9F6C-C0759F1EB412}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{25F000B8-78AC-49CD-B2ED-11180E9D6163}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,6 +12,8 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25F000B8-78AC-49CD-B2ED-11180E9D6163}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25F000B8-78AC-49CD-B2ED-11180E9D6163}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EEC07F78-E583-46B0-9F6C-C0759F1EB412}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EEC07F78-E583-46B0-9F6C-C0759F1EB412}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EEC07F78-E583-46B0-9F6C-C0759F1EB412}.Release|Any CPU.ActiveCfg = Release|Any CPU
