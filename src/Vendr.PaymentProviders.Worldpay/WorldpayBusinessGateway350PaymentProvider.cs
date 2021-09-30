@@ -192,7 +192,7 @@ namespace Vendr.PaymentProviders.Worldpay
             return await base.GetOrderReferenceAsync(ctx);
         }
 
-        public override async Task<CallbackResult> ProcessCallbackAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
+        public override Task<CallbackResult> ProcessCallbackAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
         {
             // The request stream is processed inside GetOrderReferenceAsync and the relevant data
             // is stored in the payment provider context to prevent needing to re-process it
@@ -216,7 +216,7 @@ namespace Vendr.PaymentProviders.Worldpay
                     {
                         _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} response password incorrect");
 
-                        return CallbackResult.Ok();
+                        return Task.FromResult(CallbackResult.Ok());
                     }
                 }
 
@@ -229,13 +229,13 @@ namespace Vendr.PaymentProviders.Worldpay
 
                     _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment authorised");
 
-                    return CallbackResult.Ok(new TransactionInfo
+                    return Task.FromResult(CallbackResult.Ok(new TransactionInfo
                     {
                         AmountAuthorized = totalAmount,
                         TransactionFee = 0m,
                         TransactionId = transactionId,
                         PaymentStatus = paymentStatus
-                    });
+                    }));
                 }
                 else
                 {
@@ -243,7 +243,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 }
             }
 
-            return CallbackResult.Ok();
+            return Task.FromResult(CallbackResult.Ok());
         }
     }
 }
