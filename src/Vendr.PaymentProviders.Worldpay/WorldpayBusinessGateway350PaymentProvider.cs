@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using Vendr.Core;
-using Vendr.Core.Logging;
 using Vendr.Core.Models;
-using Vendr.Core.Web;
-using Vendr.Core.Web.Api;
-using Vendr.Core.Web.PaymentProviders;
+using Vendr.Core.Api;
+using Vendr.Core.PaymentProviders;
 using Vendr.PaymentProviders.Worldpay.Helpers;
+using Vendr.Common.Logging;
+using Vendr.Extensions;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System.Web;
+using System.Collections.Specialized;
 
 namespace Vendr.PaymentProviders.Worldpay
 {
@@ -20,46 +21,73 @@ namespace Vendr.PaymentProviders.Worldpay
         private const string LiveBaseUrl = "https://secure.worldpay.com/wcc/purchase";
         private const string TestBaseUrl = "https://secure-test.worldpay.com/wcc/purchase";
 
-        private readonly ILogger _logger;
+        private readonly ILogger<WorldpayBusinessGateway350PaymentProvider> _logger;
 
-        public WorldpayBusinessGateway350PaymentProvider(VendrContext vendr, ILogger logger) : base(vendr)
+        public override bool FinalizeAtContinueUrl => false;
+
+        public WorldpayBusinessGateway350PaymentProvider(VendrContext vendr,
+            ILogger<WorldpayBusinessGateway350PaymentProvider> logger) 
+            : base(vendr)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public override bool FinalizeAtContinueUrl => false;
 
-        public override PaymentFormResult GenerateForm(OrderReadOnly order, string continueUrl, string cancelUrl, string callbackUrl, WorldpayBusinessGateway350Settings settings)
+        public override string GetCancelUrl(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
+        {
+            ctx.Settings.MustNotBeNull("ctx.Settings");
+            ctx.Settings.CancelUrl.MustNotBeNull("ctx.Settings.CancelUrl");
+
+            return ctx.Settings.CancelUrl;
+        }
+
+        public override string GetContinueUrl(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
+        {
+            ctx.Settings.MustNotBeNull("ctx.Settings");
+            ctx.Settings.ContinueUrl.MustNotBeNull("ctx.Settings.ContinueUrl");
+
+            return ctx.Settings.ContinueUrl;
+        }
+
+        public override string GetErrorUrl(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
+        {
+            ctx.Settings.MustNotBeNull("ctx.Settings");
+            ctx.Settings.ErrorUrl.MustNotBeNull("ctx.Settings.ErrorUrl");
+
+            return ctx.Settings.ErrorUrl;
+        }
+
+        public override Task<PaymentFormResult> GenerateFormAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
         {
             try
             {
-                if (settings.VerboseLogging)
+                if (ctx.Settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"GenerateForm method called for cart {order.OrderNumber}");
+                    _logger.Info($"GenerateForm method called for cart {ctx.Order.OrderNumber}");
                 }
 
-                settings.InstallId.MustNotBeNull("settings.InstallId");
+                ctx.Settings.InstallId.MustNotBeNull("ctx.Settings.InstallId");
 
-                var firstname = order.CustomerInfo.FirstName;
-                var surname = order.CustomerInfo.LastName;
+                var firstname = ctx.Order.CustomerInfo.FirstName;
+                var surname = ctx.Order.CustomerInfo.LastName;
 
-                if (!string.IsNullOrEmpty(settings.BillingFirstNamePropertyAlias))
+                if (!string.IsNullOrEmpty(ctx.Settings.BillingFirstNamePropertyAlias))
                 {
-                    firstname = order.Properties[settings.BillingFirstNamePropertyAlias];
+                    firstname = ctx.Order.Properties[ctx.Settings.BillingFirstNamePropertyAlias];
                 }
 
-                if (!string.IsNullOrEmpty(settings.BillingLastNamePropertyAlias))
+                if (!string.IsNullOrEmpty(ctx.Settings.BillingLastNamePropertyAlias))
                 {
-                    surname = order.Properties[settings.BillingLastNamePropertyAlias];
+                    surname = ctx.Order.Properties[ctx.Settings.BillingLastNamePropertyAlias];
                 }
 
-                var address1 = order.Properties[settings.BillingAddressLine1PropertyAlias] ?? string.Empty;
-                var city = order.Properties[settings.BillingAddressCityPropertyAlias] ?? string.Empty;
-                var postcode = order.Properties[settings.BillingAddressZipCodePropertyAlias] ?? string.Empty;
-                var billingCountry = Vendr.Services.CountryService.GetCountry(order.PaymentInfo.CountryId.Value);
+                var address1 = ctx.Order.Properties[ctx.Settings.BillingAddressLine1PropertyAlias] ?? string.Empty;
+                var city = ctx.Order.Properties[ctx.Settings.BillingAddressCityPropertyAlias] ?? string.Empty;
+                var postcode = ctx.Order.Properties[ctx.Settings.BillingAddressZipCodePropertyAlias] ?? string.Empty;
+                var billingCountry = Vendr.Services.CountryService.GetCountry(ctx.Order.PaymentInfo.CountryId.Value);
                 var billingCountryCode = billingCountry.Code.ToUpperInvariant();
-                var amount = order.TransactionAmount.Value.Value.ToString("0.00", CultureInfo.InvariantCulture);
-                var currency = Vendr.Services.CurrencyService.GetCurrency(order.CurrencyId);
+                var amount = ctx.Order.TransactionAmount.Value.Value.ToString("0.00", CultureInfo.InvariantCulture);
+                var currency = Vendr.Services.CurrencyService.GetCurrency(ctx.Order.CurrencyId);
                 var currencyCode = currency.Code.ToUpperInvariant();
 
                 // Ensure billing country has valid ISO 3166 code
@@ -77,140 +105,129 @@ namespace Vendr.PaymentProviders.Worldpay
 
                 var orderDetails = new Dictionary<string, string>
                 {
-                    { "instId", settings.InstallId },
-                    { "testMode", settings.TestMode ? "100" : "0" },
-                    { "authMode", settings.Capture ? "A" : "E" },
-                    { "cartId", order.OrderNumber },
+                    { "instId", ctx.Settings.InstallId },
+                    { "testMode", ctx.Settings.TestMode ? "100" : "0" },
+                    { "authMode", ctx.Settings.Capture ? "A" : "E" },
+                    { "cartId", ctx.Order.OrderNumber },
                     { "amount", amount },
                     { "currency", currencyCode },
                     { "name", firstname + " " + surname },
-                    { "email", order.CustomerInfo.Email },
+                    { "email", ctx.Order.CustomerInfo.Email },
                     { "address1", address1 },
                     { "town", city },
                     { "postcode", postcode },
                     { "country", billingCountryCode },
-                    { "MC_orderRef", order.GenerateOrderReference() },
-                    { "MC_cancelurl", cancelUrl },
-                    { "MC_returnurl", continueUrl },
-                    { "MC_callbackurl", callbackUrl }
+                    { "MC_ctx.OrderRef", ctx.Order.GenerateOrderReference() },
+                    { "MC_cancelurl", ctx.Urls.CancelUrl },
+                    { "MC_returnurl", ctx.Urls.ContinueUrl },
+                    { "MC_callbackurl", ctx.Urls.CallbackUrl }
                 };
 
-                if (!string.IsNullOrEmpty(settings.Md5Secret))
+                if (!string.IsNullOrEmpty(ctx.Settings.Md5Secret))
                 {
-                    var orderSignature = Md5Helper.CreateMd5(settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.OrderNumber);
+                    var orderSignature = Md5Helper.CreateMd5(ctx.Settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + ctx.Settings.InstallId + ":" + ctx.Order.OrderNumber);
 
                     orderDetails.Add("signature", orderSignature);
 
-                    if (settings.VerboseLogging)
+                    if (ctx.Settings.VerboseLogging)
                     {
-                        _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Before Md5: " + settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + settings.InstallId + ":" + order.OrderNumber);
-                        _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Signature: " + orderSignature);
+                        _logger.Info($"Before Md5: " + ctx.Settings.Md5Secret + ":" + amount + ":" + currencyCode + ":" + ctx.Settings.InstallId + ":" + ctx.Order.OrderNumber);
+                        _logger.Info($"Signature: " + orderSignature);
                     }
                 }
 
-                var url = settings.TestMode ? TestBaseUrl : LiveBaseUrl;
-                var form = new PaymentForm(url, FormMethod.Post)
+                var url = ctx.Settings.TestMode ? TestBaseUrl : LiveBaseUrl;
+                var form = new PaymentForm(url, PaymentFormMethod.Post)
                 {
                     Inputs = orderDetails
                 };
 
-                if (settings.VerboseLogging)
+                if (ctx.Settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment url {url}");
-                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Form data {orderDetails.ToFriendlyString()}");
+                    _logger.Info($"Payment url {url}");
+                    _logger.Info($"Form data {orderDetails.ToFriendlyString()}");
                 }
 
-                return new PaymentFormResult()
+                return Task.FromResult(new PaymentFormResult()
                 {
                     Form = form
-                };
+                });
             }
             catch (Exception e)
             {
-                _logger.Error<WorldpayBusinessGateway350PaymentProvider>($"Exception thrown for cart {order.OrderNumber} - with error {e.Message}");
+                _logger.Error($"Exception thrown for cart {ctx.Order.OrderNumber} - with error {e.Message}");
+
                 throw;
             }
         }
 
-        public override string GetCancelUrl(OrderReadOnly order, WorldpayBusinessGateway350Settings settings)
+        public override async Task<OrderReference> GetOrderReferenceAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
         {
-            settings.MustNotBeNull("settings");
-            settings.CancelUrl.MustNotBeNull("settings.CancelUrl");
+            ctx.Request.MustNotBeNull("ctx.Request");
+            ctx.Settings.MustNotBeNull("ctx.Settings");
 
-            return settings.CancelUrl;
-        }
+            var queryData = HttpUtility.ParseQueryString(ctx.Request.RequestUri.Query);;
+            var formData = await ctx.Request.Content.ReadAsFormDataAsync();
 
-        public override string GetErrorUrl(OrderReadOnly order, WorldpayBusinessGateway350Settings settings)
-        {
-            settings.MustNotBeNull("settings");
-            settings.ErrorUrl.MustNotBeNull("settings.ErrorUrl");
+            ctx.AdditionalData.Add("queryData", queryData);
+            ctx.AdditionalData.Add("formData", formData);
 
-            return settings.ErrorUrl;
-        }
-
-        public override string GetContinueUrl(OrderReadOnly order, WorldpayBusinessGateway350Settings settings)
-        {
-            settings.MustNotBeNull("settings");
-            settings.ContinueUrl.MustNotBeNull("settings.ContinueUrl");
-
-            return settings.ContinueUrl;
-        }
-
-        public override OrderReference GetOrderReference(HttpRequestBase request, WorldpayBusinessGateway350Settings settings)
-        {
-            request.MustNotBeNull("request");
-            settings.MustNotBeNull("settings");
-
-            if (settings.VerboseLogging)
+            if (ctx.Settings.VerboseLogging)
             {
-                _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Worldpay data {request.Form.ToFriendlyString()}");
+                _logger.Info($"Worldpay data {formData.ToFriendlyString()}");
             }
 
-            if (!string.IsNullOrEmpty(settings.ResponsePassword))
+            if (!string.IsNullOrEmpty(ctx.Settings.ResponsePassword))
             {
                 // Validate password
-                if (settings.ResponsePassword != request.Form["callbackPW"])
+                if (ctx.Settings.ResponsePassword != formData["callbackPW"])
                 {
                     return null;
                 }
             }
 
-            if (OrderReference.TryParse(request.Form["MC_orderRef"], out var orderReference))
+            if (OrderReference.TryParse(formData["MC_ctx.OrderRef"], out var orderReference))
                 return orderReference;
 
-            return base.GetOrderReference(request, settings);
+            return await base.GetOrderReferenceAsync(ctx);
         }
 
-        public override CallbackResult ProcessCallback(OrderReadOnly order, HttpRequestBase request, WorldpayBusinessGateway350Settings settings)
+        public override async Task<CallbackResult> ProcessCallbackAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
         {
-            if (request.QueryString["msgType"] == "authResult")
-            {
-                _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber}");
+            // The request stream is processed inside GetOrderReferenceAsync and the relevant data
+            // is stored in the payment provider context to prevent needing to re-process it
+            // so we just access it directly from the context assuming it exists.
+            var queryData = ctx.AdditionalData["queryData"] as NameValueCollection;
+            var formData = ctx.AdditionalData["formData"] as NameValueCollection;
 
-                if (settings.VerboseLogging)
+            if (queryData["msgType"] == "authResult")
+            {
+                _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber}");
+
+                if (ctx.Settings.VerboseLogging)
                 {
-                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Worldpay data {request.Form.ToFriendlyString()}");
+                    _logger.Info($"Worldpay data {formData.ToFriendlyString()}");
                 }
 
-                if (!string.IsNullOrEmpty(settings.ResponsePassword))
+                if (!string.IsNullOrEmpty(ctx.Settings.ResponsePassword))
                 {
                     // validate password
-                    if (settings.ResponsePassword != request.Form["callbackPW"])
+                    if (ctx.Settings.ResponsePassword != formData["callbackPW"])
                     {
-                        _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber} response password incorrect");
+                        _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} response password incorrect");
 
                         return CallbackResult.Ok();
                     }
                 }
 
                 // if still here, password was not required or matched
-                if (request.Form["transStatus"] == "Y")
+                if (formData["transStatus"] == "Y")
                 {
-                    var totalAmount = decimal.Parse(request.Form["authAmount"], CultureInfo.InvariantCulture);
-                    var transactionId = request.Form["transId"];
-                    var paymentStatus = request.Form["authMode"] == "A" ? PaymentStatus.Authorized : PaymentStatus.Captured;
+                    var totalAmount = decimal.Parse(formData["authAmount"], CultureInfo.InvariantCulture);
+                    var transactionId = formData["transId"];
+                    var paymentStatus = formData["authMode"] == "A" ? PaymentStatus.Authorized : PaymentStatus.Captured;
 
-                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber} payment authorised");
+                    _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment authorised");
 
                     return CallbackResult.Ok(new TransactionInfo
                     {
@@ -222,7 +239,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 }
                 else
                 {
-                    _logger.Info<WorldpayBusinessGateway350PaymentProvider>($"Payment call back for cart {order.OrderNumber} payment not authorised or error");
+                    _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment not authorised or error");
                 }
             }
 
