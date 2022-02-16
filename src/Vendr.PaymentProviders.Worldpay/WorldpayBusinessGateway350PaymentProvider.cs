@@ -11,7 +11,6 @@ using Vendr.Extensions;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Web;
-using System.Collections.Specialized;
 
 namespace Vendr.PaymentProviders.Worldpay
 {
@@ -161,44 +160,10 @@ namespace Vendr.PaymentProviders.Worldpay
             }
         }
 
-        public override async Task<OrderReference> GetOrderReferenceAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
+        public override async Task<CallbackResult> ProcessCallbackAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
         {
-            ctx.Request.MustNotBeNull("ctx.Request");
-            ctx.Settings.MustNotBeNull("ctx.Settings");
-
-            var queryData = HttpUtility.ParseQueryString(ctx.Request.RequestUri.Query);;
+            var queryData = HttpUtility.ParseQueryString(ctx.Request.RequestUri.Query);
             var formData = await ctx.Request.Content.ReadAsFormDataAsync();
-
-            ctx.AdditionalData.Add("queryData", queryData);
-            ctx.AdditionalData.Add("formData", formData);
-
-            if (ctx.Settings.VerboseLogging)
-            {
-                _logger.Info($"Worldpay data {formData.ToFriendlyString()}");
-            }
-
-            if (!string.IsNullOrEmpty(ctx.Settings.ResponsePassword))
-            {
-                // Validate password
-                if (ctx.Settings.ResponsePassword != formData["callbackPW"])
-                {
-                    return null;
-                }
-            }
-
-            if (OrderReference.TryParse(formData["MC_ctx.OrderRef"], out var orderReference))
-                return orderReference;
-
-            return await base.GetOrderReferenceAsync(ctx);
-        }
-
-        public override Task<CallbackResult> ProcessCallbackAsync(PaymentProviderContext<WorldpayBusinessGateway350Settings> ctx)
-        {
-            // The request stream is processed inside GetOrderReferenceAsync and the relevant data
-            // is stored in the payment provider context to prevent needing to re-process it
-            // so we just access it directly from the context assuming it exists.
-            var queryData = ctx.AdditionalData["queryData"] as NameValueCollection;
-            var formData = ctx.AdditionalData["formData"] as NameValueCollection;
 
             if (queryData["msgType"] == "authResult")
             {
@@ -216,7 +181,7 @@ namespace Vendr.PaymentProviders.Worldpay
                     {
                         _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} response password incorrect");
 
-                        return Task.FromResult(CallbackResult.Ok());
+                        return await Task.FromResult(CallbackResult.Ok());
                     }
                 }
 
@@ -229,7 +194,7 @@ namespace Vendr.PaymentProviders.Worldpay
 
                     _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment authorised");
 
-                    return Task.FromResult(CallbackResult.Ok(new TransactionInfo
+                    return await Task.FromResult(CallbackResult.Ok(new TransactionInfo
                     {
                         AmountAuthorized = totalAmount,
                         TransactionFee = 0m,
@@ -237,13 +202,11 @@ namespace Vendr.PaymentProviders.Worldpay
                         PaymentStatus = paymentStatus
                     }));
                 }
-                else
-                {
-                    _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment not authorised or error");
-                }
+
+                _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment not authorised or error");
             }
 
-            return Task.FromResult(CallbackResult.Ok());
+            return await Task.FromResult(CallbackResult.Ok());
         }
     }
 }
