@@ -190,7 +190,7 @@ namespace Vendr.PaymentProviders.Worldpay
                 {
                     var totalAmount = decimal.Parse(formData["authAmount"], CultureInfo.InvariantCulture);
                     var transactionId = formData["transId"];
-                    var paymentStatus = formData["authMode"] == "A" ? PaymentStatus.Authorized : PaymentStatus.Captured;
+                    var paymentStatus = formData["authMode"] == "A" ? PaymentStatus.Captured : PaymentStatus.Authorized;
 
                     _logger.Info($"Payment call back for cart {ctx.Order.OrderNumber} payment authorised");
 
